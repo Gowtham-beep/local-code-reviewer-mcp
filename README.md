@@ -1,1 +1,1 @@
-# local-code-reviewer-mcp
+MCP + agent learning project
