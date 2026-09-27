@@ -1,0 +1,20 @@
+[
+  {
+    "file": "src/utils/rotatingFileWriter.ts",
+    "line": 55,
+    "category": "Off-by-one error in a loop or array/slice boundary",
+    "description": "Off-by-one loop condition (i > 1 instead of i >= 1) omits rotating .1 to .2, causing the first backup log to be overwritten."
+  },
+  {
+    "file": "src/services/otpService.ts",
+    "line": 24,
+    "category": "Incorrect comparison operator (e.g. = instead of ==, or a flipped condition)",
+    "description": "Flipped comparison operator (!== instead of ===) in verifyOtp causes verification to succeed for invalid OTPs and fail for valid ones."
+  },
+  {
+    "file": "src/modules/notifications/controller.ts",
+    "line": 21,
+    "category": "Missing await on an async call (a real bug pattern in this async/TypeScript codebase)",
+    "description": "Missing await on notifyService.update() causes an unresolved Promise object rather than the updated notification record to be returned in the response."
+  }
+]

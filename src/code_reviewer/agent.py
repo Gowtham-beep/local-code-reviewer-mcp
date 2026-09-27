@@ -2,6 +2,7 @@ import json
 import httpx
 
 from code_reviewer.mcp_server import get_diff, list_files, read_file
+from code_reviewer.models import Finding, ReviewResult
 
 OLLAMA_URL = "http://localhost:11434/api/chat"
 MODEL_NAME = "qwen2.5-coder:7b"
@@ -85,7 +86,11 @@ TOOL_SCHEMAS = [
 ]
 
 
-def ollama_chat(messages: list[dict], tools: list[dict] | None = None) -> dict:
+def ollama_chat(
+    messages: list[dict],
+    tools: list[dict] | None = None,
+    format: str | None = None,
+) -> dict:
     """Send a chat request to Ollama and return the assistant's response message.
 
     Returns the raw "message" dict from Ollama's response, which is either:
@@ -99,11 +104,14 @@ def ollama_chat(messages: list[dict], tools: list[dict] | None = None) -> dict:
     }
     if tools:
         payload["tools"] = tools
+    if format:
+        payload["format"] = format
 
     response = httpx.post(OLLAMA_URL, json=payload, timeout=120.0)
     response.raise_for_status()
     data = response.json()
     return data["message"]
+
 
 
 def try_parse_tool_call(message: dict) -> dict | None:
@@ -209,11 +217,41 @@ def run_review(repo_path: str, base: str, head: str, max_iterations: int = 8) ->
     return f"Review did not complete within the limit of {max_iterations} iterations."
 
 
+def extract_findings(review_text: str) -> ReviewResult:
+    """Convert free-form review text into structured findings via a second
+    Ollama call with JSON-constrained decoding (format="json")."""
+    prompt = (
+        "Extract every concrete issue mentioned in the following review text into JSON matching this exact schema:\n"
+        '{"findings": [{"file": "...", "line": "...", "severity": "error|warn|info", "issue": "...", "suggestion": "..."}]}\n\n'
+        'If no concrete issues are mentioned, return {"findings": []}.\n'
+        "Do not invent any issues that are absent from the text.\n\n"
+        f"Review text:\n{review_text}"
+    )
+
+    response_message = ollama_chat(
+        messages=[{"role": "user", "content": prompt}],
+        format="json",
+    )
+    raw_content = response_message.get("content", "").strip()
+
+    try:
+        data = json.loads(raw_content)
+        return ReviewResult.model_validate(data)
+    except Exception as exc:
+        print(f"Error parsing/validating findings JSON: {exc}")
+        print(f"Raw content was:\n{raw_content}")
+        return ReviewResult(findings=[])
+
+
 if __name__ == "__main__":
     review = run_review(
         repo_path="/home/gpuserver1/P-T_backend_ts",
-        base="e833a34",
-        head="04d72ec",
+        base="f6b9bbb666d58640e1af8a47c3587a504f3b76a7",
+        head="8e3a3472850545d2751597093d0b78a53775ff20",
     )
     print("\n=== FINAL REVIEW ===\n")
     print(review)
+
+    findings_result = extract_findings(review)
+    print("\n=== EXTRACTED FINDINGS ===\n")
+    print(json.dumps(findings_result.model_dump(), indent=2))
