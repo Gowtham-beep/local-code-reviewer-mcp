@@ -46,7 +46,7 @@ export ALLOWED_REPO_ROOT=/path/to/allowed/repos/parent/dir
 ```bash
 uv run python src/code_reviewer/agent.py
 ```
-> **Note:** Currently the repository path, base ref, and head ref are hardcoded in the `__main__` block for testing. No CLI flag parsing was built yet (see "Not built / cut for time" below).
+> **Note:** Currently the repository path, base ref, and head ref are hardcoded in the `__main__` block for testing. No CLI flag parsing was built yet (see "Future Work" below).
 
 ### Running the Evaluation Harness
 Run the evaluation harness from the project root:
@@ -55,7 +55,7 @@ uv run python -m eval.run_eval
 ```
 This runs the full pipeline 3 consecutive times against a small set of 3 manually-injected known bugs and writes `eval/results.md` with recall, precision, and false-positive numbers.
 
-## Not Built / Cut for Time
+## Future Work
 These items were explicitly scoped out under the 3-day project deadline:
 - **No CLI (typer) with argument parsing:** base, head, and repo path are currently hardcoded for testing.
 - **No RAG / vector search / codebase-wide context retrieval:** dropped and out of scope entirely for this pass.
